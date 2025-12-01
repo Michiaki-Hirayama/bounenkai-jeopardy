@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社長室 Jeopardy</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 編集画面リンク -->
+        <a href="admin.html" class="admin-link">⚙️ 編集</a>
+        
+        <!-- メイン画面 -->
+        <div id="main-screen" class="screen active">
+            <h1 class="title">社長室 Jeopardy</h1>
+            
+            <div class="game-area">
+                <!-- クイズグリッド -->
+                <div class="quiz-grid">
+                    <div id="categories-header" class="categories-header"></div>
+                    <div id="questions-grid" class="questions-grid"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 問題表示画面 -->
+        <div id="question-screen" class="screen">
+            <div class="question-header">
+                <div class="question-meta">
+                    <span id="question-category" class="category-name"></span>
+                    <span id="question-id" class="question-id"></span>
+                    <span id="question-points" class="points"></span>
+                </div>
+            </div>
+            
+            <div class="question-content">
+                <div id="question-text" class="question-text"></div>
+            </div>
+            
+            <div class="answer-section">
+                <div id="answer-content" class="answer-content" style="display: none;">
+                    <div id="answer-text" class="answer-text"></div>
+                    <div id="media-container" class="media-container"></div>
+                    <div id="explanation-text" class="explanation-text"></div>
+                </div>
+            </div>
+            
+            <div class="question-controls">
+                <button id="show-answer-btn" class="control-btn primary">正解を表示</button>
+                <button id="back-to-grid-btn" class="control-btn">一覧に戻る</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="db.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
