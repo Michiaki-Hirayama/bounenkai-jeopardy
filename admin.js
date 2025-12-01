@@ -280,9 +280,9 @@ async function handleMediaUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // ファイルサイズチェック（10MB制限）
-    if (file.size > 10 * 1024 * 1024) {
-        alert('ファイルサイズは10MB以下にしてください');
+    // ファイルサイズチェック（1GB制限）
+    if (file.size > 1024 * 1024 * 1024) {
+        alert('ファイルサイズは1GB以下にしてください');
         event.target.value = '';
         return;
     }
