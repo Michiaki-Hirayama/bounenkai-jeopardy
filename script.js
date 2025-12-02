@@ -154,13 +154,16 @@ async function showQuestion(question) {
     document.getElementById('question-points').textContent = question.points + 'GW';
     document.getElementById('question-text').textContent = question.questionText;
     
+    // 問題用メディアを表示
+    await displayQuestionMedia(question);
+    
     // 正解・説明を設定（最初は非表示）
-    document.getElementById('answer-text').textContent = `正解: ${question.answerText}`;
+    document.getElementById('answer-text').textContent = question.answerText ? `正解: ${question.answerText}` : '';
     document.getElementById('explanation-text').textContent = question.explanation || '';
     document.getElementById('answer-content').style.display = 'none';
     document.getElementById('show-answer-btn').textContent = '正解を表示';
     
-    // メディアをクリアして、現在の問題を保存
+    // 解答用メディアをクリアして、現在の問題を保存
     document.getElementById('media-container').innerHTML = '';
     window.currentQuestion = question;
     
@@ -168,6 +171,35 @@ async function showQuestion(question) {
     showQuestionScreen();
 }
 
+// 問題用メディアを表示
+async function displayQuestionMedia(question) {
+    const mediaContainer = document.getElementById('question-media-container');
+    mediaContainer.innerHTML = '';
+    
+    if (question.questionMediaId) {
+        try {
+            const media = await JeopardyDB.media.get(question.questionMediaId);
+            if (media) {
+                if (media.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = media.data;
+                    img.alt = '問題画像';
+                    mediaContainer.appendChild(img);
+                } else if (media.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = media.data;
+                    video.controls = true;
+                    video.style.maxWidth = '100%';
+                    mediaContainer.appendChild(video);
+                }
+            }
+        } catch (error) {
+            console.error('問題用メディア読み込みエラー:', error);
+        }
+    }
+}
+
+// 解答用メディアを表示
 async function displayMedia(question) {
     const mediaContainer = document.getElementById('media-container');
     mediaContainer.innerHTML = '';
@@ -179,7 +211,7 @@ async function displayMedia(question) {
                 if (media.type.startsWith('image/')) {
                     const img = document.createElement('img');
                     img.src = media.data;
-                    img.alt = 'Question Image';
+                    img.alt = '解答画像';
                     mediaContainer.appendChild(img);
                 } else if (media.type.startsWith('video/')) {
                     const video = document.createElement('video');
@@ -190,7 +222,7 @@ async function displayMedia(question) {
                 }
             }
         } catch (error) {
-            console.error('メディア読み込みエラー:', error);
+            console.error('解答用メディア読み込みエラー:', error);
         }
     }
 }

@@ -200,8 +200,15 @@ function deleteQuestion(id) {
     return new Promise(async (resolve, reject) => {
         // 関連するメディアも削除
         const question = await getQuestion(id);
-        if (question && question.mediaId) {
-            await deleteMedia(question.mediaId);
+        if (question) {
+            // 問題用メディアを削除
+            if (question.questionMediaId) {
+                await deleteMedia(question.questionMediaId);
+            }
+            // 解答用メディアを削除
+            if (question.mediaId) {
+                await deleteMedia(question.mediaId);
+            }
         }
         
         const transaction = db.transaction(['questions'], 'readwrite');
@@ -282,13 +289,23 @@ async function exportAllData() {
     const categories = await getAllCategories();
     const questions = await getAllQuestions();
     
-    // メディアデータも含める
+    // メディアデータも含める（問題用・解答用両方）
     const questionsWithMedia = await Promise.all(questions.map(async (q) => {
-        if (q.mediaId) {
-            const media = await getMedia(q.mediaId);
-            return { ...q, mediaData: media };
+        const result = { ...q };
+        
+        // 問題用メディア
+        if (q.questionMediaId) {
+            const questionMedia = await getMedia(q.questionMediaId);
+            result.questionMediaData = questionMedia;
         }
-        return q;
+        
+        // 解答用メディア
+        if (q.mediaId) {
+            const answerMedia = await getMedia(q.mediaId);
+            result.mediaData = answerMedia;
+        }
+        
+        return result;
     }));
     
     return {
@@ -318,7 +335,14 @@ async function importAllData(data) {
         const oldCategoryId = q.categoryId;
         q.categoryId = categoryIdMap[oldCategoryId];
         
-        // メディアデータがあればインポート
+        // 問題用メディアデータがあればインポート
+        if (q.questionMediaData) {
+            const questionMediaId = await addMediaDirect(q.questionMediaData);
+            q.questionMediaId = questionMediaId;
+            delete q.questionMediaData;
+        }
+        
+        // 解答用メディアデータがあればインポート
         if (q.mediaData) {
             const mediaId = await addMediaDirect(q.mediaData);
             q.mediaId = mediaId;

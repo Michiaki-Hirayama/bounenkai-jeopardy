@@ -1,6 +1,7 @@
 // 編集画面のロジック
 let currentQuestionId = null;
-let currentMediaId = null;
+let currentQuestionMediaId = null;  // 問題用メディア
+let currentAnswerMediaId = null;    // 解答用メディア
 
 // 初期化
 document.addEventListener('DOMContentLoaded', async function() {
@@ -30,11 +31,17 @@ function setupEventListeners() {
     // 全データ削除
     document.getElementById('reset-btn').addEventListener('click', resetAllData);
     
-    // メディアアップロード
-    document.getElementById('question-media').addEventListener('change', handleMediaUpload);
+    // 問題用メディアアップロード
+    document.getElementById('question-media-file').addEventListener('change', (e) => handleMediaUpload(e, 'question'));
     
-    // メディア削除
-    document.getElementById('remove-media-btn').addEventListener('click', removeMedia);
+    // 問題用メディア削除
+    document.getElementById('remove-question-media-btn').addEventListener('click', () => removeMedia('question'));
+    
+    // 解答用メディアアップロード
+    document.getElementById('answer-media-file').addEventListener('change', (e) => handleMediaUpload(e, 'answer'));
+    
+    // 解答用メディア削除
+    document.getElementById('remove-answer-media-btn').addEventListener('click', () => removeMedia('answer'));
 }
 
 // ========== カテゴリー管理 ==========
@@ -128,8 +135,8 @@ async function renderQuestions() {
                     ${questions.map(q => `
                         <div class="question-card ${q.enabled ? '' : 'disabled'}" onclick="openEditQuestionModal(${q.id})">
                             <div class="points">${q.points}GW</div>
-                            <div class="preview">${q.questionText}</div>
-                            ${q.mediaId ? '<div class="has-media">📎</div>' : ''}
+                            <div class="preview">${q.questionText || '（メディアのみ）'}</div>
+                            ${q.questionMediaId || q.mediaId ? `<div class="has-media">${q.questionMediaId ? '🖼️' : ''}${q.mediaId ? '📎' : ''}</div>` : ''}
                         </div>
                     `).join('')}
                     <div class="question-card add-question-card" onclick="openNewQuestionModal(${cat.id})">
@@ -151,7 +158,8 @@ async function renderQuestions() {
 
 async function openNewQuestionModal(categoryId) {
     currentQuestionId = null;
-    currentMediaId = null;
+    currentQuestionMediaId = null;
+    currentAnswerMediaId = null;
     
     document.getElementById('modal-title').textContent = '新しい問題を追加';
     document.getElementById('question-id').value = '';
@@ -166,9 +174,16 @@ async function openNewQuestionModal(categoryId) {
     document.getElementById('question-answer').value = '';
     document.getElementById('question-explanation').value = '';
     document.getElementById('question-enabled').checked = true;
-    document.getElementById('question-media').value = '';
-    document.getElementById('media-preview').innerHTML = '';
-    document.getElementById('remove-media-btn').style.display = 'none';
+    
+    // 問題用メディアをリセット
+    document.getElementById('question-media-file').value = '';
+    document.getElementById('question-media-preview').innerHTML = '';
+    document.getElementById('remove-question-media-btn').style.display = 'none';
+    
+    // 解答用メディアをリセット
+    document.getElementById('answer-media-file').value = '';
+    document.getElementById('answer-media-preview').innerHTML = '';
+    document.getElementById('remove-answer-media-btn').style.display = 'none';
     
     document.getElementById('question-modal').style.display = 'flex';
 }
@@ -178,7 +193,8 @@ async function openEditQuestionModal(questionId) {
     if (!question) return;
     
     currentQuestionId = questionId;
-    currentMediaId = question.mediaId || null;
+    currentQuestionMediaId = question.questionMediaId || null;
+    currentAnswerMediaId = question.mediaId || null;
     
     document.getElementById('modal-title').textContent = '問題を編集';
     document.getElementById('question-id').value = questionId;
@@ -193,17 +209,29 @@ async function openEditQuestionModal(questionId) {
     document.getElementById('question-answer').value = question.answerText;
     document.getElementById('question-explanation').value = question.explanation || '';
     document.getElementById('question-enabled').checked = question.enabled;
-    document.getElementById('question-media').value = '';
+    document.getElementById('question-media-file').value = '';
+    document.getElementById('answer-media-file').value = '';
     
-    // メディアプレビュー
+    // 問題用メディアプレビュー
+    if (question.questionMediaId) {
+        const media = await JeopardyDB.media.get(question.questionMediaId);
+        if (media) {
+            showMediaPreview(media, 'question');
+        }
+    } else {
+        document.getElementById('question-media-preview').innerHTML = '';
+        document.getElementById('remove-question-media-btn').style.display = 'none';
+    }
+    
+    // 解答用メディアプレビュー
     if (question.mediaId) {
         const media = await JeopardyDB.media.get(question.mediaId);
         if (media) {
-            showMediaPreview(media);
+            showMediaPreview(media, 'answer');
         }
     } else {
-        document.getElementById('media-preview').innerHTML = '';
-        document.getElementById('remove-media-btn').style.display = 'none';
+        document.getElementById('answer-media-preview').innerHTML = '';
+        document.getElementById('remove-answer-media-btn').style.display = 'none';
     }
     
     document.getElementById('question-modal').style.display = 'flex';
@@ -221,7 +249,8 @@ async function updateCategorySelect(selectedId) {
 function closeModal() {
     document.getElementById('question-modal').style.display = 'none';
     currentQuestionId = null;
-    currentMediaId = null;
+    currentQuestionMediaId = null;
+    currentAnswerMediaId = null;
 }
 
 async function saveQuestion() {
@@ -233,8 +262,15 @@ async function saveQuestion() {
     const explanation = document.getElementById('question-explanation').value.trim();
     const enabled = document.getElementById('question-enabled').checked;
     
-    if (!questionText || !answerText) {
-        alert('問題文と正解は必須です');
+    // 問題文はテキストかメディアのどちらかが必要
+    if (!questionText && !currentQuestionMediaId) {
+        alert('問題文のテキストまたはメディアを入力してください');
+        return;
+    }
+    
+    // 正解はテキストかメディアのどちらかが必要
+    if (!answerText && !currentAnswerMediaId) {
+        alert('正解のテキストまたはメディアを入力してください');
         return;
     }
     
@@ -251,7 +287,8 @@ async function saveQuestion() {
         answerText,
         explanation,
         enabled,
-        mediaId: currentMediaId
+        questionMediaId: currentQuestionMediaId,
+        mediaId: currentAnswerMediaId
     };
     
     if (currentQuestionId) {
@@ -276,7 +313,7 @@ async function deleteQuestion(id) {
 
 // ========== メディア操作 ==========
 
-async function handleMediaUpload(event) {
+async function handleMediaUpload(event, type) {
     const file = event.target.files[0];
     if (!file) return;
     
@@ -287,22 +324,32 @@ async function handleMediaUpload(event) {
         return;
     }
     
-    // 古いメディアがあれば削除予約
-    if (currentMediaId) {
-        await JeopardyDB.media.delete(currentMediaId);
+    // 古いメディアがあれば削除
+    if (type === 'question' && currentQuestionMediaId) {
+        await JeopardyDB.media.delete(currentQuestionMediaId);
+    } else if (type === 'answer' && currentAnswerMediaId) {
+        await JeopardyDB.media.delete(currentAnswerMediaId);
     }
     
     // 新しいメディアを保存
     const mediaId = await JeopardyDB.media.add(file);
-    currentMediaId = mediaId;
+    
+    if (type === 'question') {
+        currentQuestionMediaId = mediaId;
+    } else {
+        currentAnswerMediaId = mediaId;
+    }
     
     // プレビュー表示
     const media = await JeopardyDB.media.get(mediaId);
-    showMediaPreview(media);
+    showMediaPreview(media, type);
 }
 
-function showMediaPreview(media) {
-    const preview = document.getElementById('media-preview');
+function showMediaPreview(media, type) {
+    const previewId = type === 'question' ? 'question-media-preview' : 'answer-media-preview';
+    const removeBtnId = type === 'question' ? 'remove-question-media-btn' : 'remove-answer-media-btn';
+    
+    const preview = document.getElementById(previewId);
     
     if (media.type.startsWith('image/')) {
         preview.innerHTML = `<img src="${media.data}" alt="プレビュー">`;
@@ -310,18 +357,27 @@ function showMediaPreview(media) {
         preview.innerHTML = `<video src="${media.data}" controls></video>`;
     }
     
-    document.getElementById('remove-media-btn').style.display = 'inline-block';
+    document.getElementById(removeBtnId).style.display = 'inline-block';
 }
 
-async function removeMedia() {
-    if (currentMediaId) {
-        await JeopardyDB.media.delete(currentMediaId);
-        currentMediaId = null;
+async function removeMedia(type) {
+    if (type === 'question') {
+        if (currentQuestionMediaId) {
+            await JeopardyDB.media.delete(currentQuestionMediaId);
+            currentQuestionMediaId = null;
+        }
+        document.getElementById('question-media-preview').innerHTML = '';
+        document.getElementById('question-media-file').value = '';
+        document.getElementById('remove-question-media-btn').style.display = 'none';
+    } else {
+        if (currentAnswerMediaId) {
+            await JeopardyDB.media.delete(currentAnswerMediaId);
+            currentAnswerMediaId = null;
+        }
+        document.getElementById('answer-media-preview').innerHTML = '';
+        document.getElementById('answer-media-file').value = '';
+        document.getElementById('remove-answer-media-btn').style.display = 'none';
     }
-    
-    document.getElementById('media-preview').innerHTML = '';
-    document.getElementById('question-media').value = '';
-    document.getElementById('remove-media-btn').style.display = 'none';
 }
 
 // ========== データ管理 ==========

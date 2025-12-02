@@ -18,7 +18,6 @@
             <h1 class="title">問題編集</h1>
             <div class="header-actions">
                 <a href="index.html" class="btn btn-secondary">ゲーム画面へ</a>
-                <a href="scoreboard/" class="btn btn-secondary">スコアボード</a>
             </div>
         </header>
         
@@ -89,13 +88,22 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>問題文</label>
-                        <textarea id="question-text" class="input textarea" rows="3" required></textarea>
+                        <label>問題文（テキストまたはメディア）</label>
+                        <textarea id="question-text" class="input textarea" rows="3"></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label>正解</label>
-                        <input type="text" id="question-answer" class="input" required>
+                        <label>問題用メディア（画像・動画）</label>
+                        <div class="media-upload">
+                            <input type="file" id="question-media-file" accept="image/*,video/*" class="file-input">
+                            <div id="question-media-preview" class="media-preview"></div>
+                            <button type="button" id="remove-question-media-btn" class="btn btn-sm btn-danger" style="display: none;">メディアを削除</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>正解（テキストまたはメディア）</label>
+                        <input type="text" id="question-answer" class="input">
                     </div>
                     
                     <div class="form-group">
@@ -104,11 +112,11 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>メディア（画像・動画）</label>
+                        <label>解答用メディア（画像・動画）</label>
                         <div class="media-upload">
-                            <input type="file" id="question-media" accept="image/*,video/*" class="file-input">
-                            <div id="media-preview" class="media-preview"></div>
-                            <button type="button" id="remove-media-btn" class="btn btn-sm btn-danger" style="display: none;">メディアを削除</button>
+                            <input type="file" id="answer-media-file" accept="image/*,video/*" class="file-input">
+                            <div id="answer-media-preview" class="media-preview"></div>
+                            <button type="button" id="remove-answer-media-btn" class="btn btn-sm btn-danger" style="display: none;">メディアを削除</button>
                         </div>
                     </div>
                     
