@@ -134,7 +134,7 @@ async function renderQuestions() {
                 <div class="question-grid">
                     ${questions.map(q => `
                         <div class="question-card ${q.enabled ? '' : 'disabled'}" onclick="openEditQuestionModal(${q.id})">
-                            <div class="points">${q.points}GW</div>
+                            <div class="points">${q.points / 10}GW</div>
                             <div class="preview">${q.questionText || '（メディアのみ）'}</div>
                             ${q.questionMediaId || q.mediaId ? `<div class="has-media">${q.questionMediaId ? '🖼️' : ''}${q.mediaId ? '📎' : ''}</div>` : ''}
                         </div>
