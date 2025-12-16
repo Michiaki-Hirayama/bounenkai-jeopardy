@@ -97,7 +97,7 @@ function buildGameGrid() {
             cell.className = 'question-cell';
             
             if (question) {
-                cell.textContent = (question.points / 10) + 'GW';
+                cell.textContent = (question.points * 2) + 'GW';
                 cell.dataset.questionId = question.id;
                 cell.addEventListener('click', () => showQuestion(question));
             } else {
@@ -157,7 +157,7 @@ async function showQuestion(question) {
     // 問題データを画面に表示
     document.getElementById('question-category').textContent = categoryName;
     document.getElementById('question-id').textContent = `Q${question.order}`;
-    document.getElementById('question-points').textContent = (question.points / 10) + 'GW';
+    document.getElementById('question-points').textContent = (question.points * 2) + 'GW';
     document.getElementById('question-text').textContent = question.questionText;
     
     // 問題用メディアを表示
