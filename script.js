@@ -128,8 +128,18 @@ function setupEventListeners() {
         }
     });
     
-    // 一覧に戻るボタン
-    document.getElementById('back-to-grid-btn').addEventListener('click', function() {
+    // 正解ボタン（グレーアウトして一覧に戻る）
+    document.getElementById('correct-btn').addEventListener('click', function() {
+        if (window.currentQuestion) {
+            // 問題を回答済みとしてマーク
+            answeredQuestions.add(window.currentQuestion.id);
+            updateQuestionCellAppearance(window.currentQuestion.id);
+        }
+        showMainScreen();
+    });
+    
+    // 不正解ボタン（グレーアウトせずに一覧に戻る）
+    document.getElementById('incorrect-btn').addEventListener('click', function() {
         showMainScreen();
     });
 }
@@ -139,10 +149,6 @@ async function showQuestion(question) {
     if (answeredQuestions.has(question.id)) {
         return;
     }
-    
-    // 問題を回答済みとしてマーク
-    answeredQuestions.add(question.id);
-    updateQuestionCellAppearance(question.id);
     
     // カテゴリー名を取得
     const category = categoriesData.find(c => c.id === question.categoryId);
